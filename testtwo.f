@@ -6,7 +6,6 @@ c using Fourier in Space (Fornberg, Canuto et al)
 c and DDASSL (Stiff ODE) Solver in time.
 c by Richard Craster
 c Note this is on a periodic domain -length to length
-c YOOOOOOO
       INTEGER MXNPDE, MXNEQ, MXLIW, MXLRW, MXNRWK,MAXORD
       INTEGER I, IBAND, IDID, IPRINT, IRES, LIW, LRW, M, NCTF,
      + NEQ, NETF, NFCN, NOINV, NRWK, NSTEPS
@@ -5890,3 +5889,4 @@ c      data pi/3.1415926535898/
                         return
                         end
 
+c Lisa is amazing
