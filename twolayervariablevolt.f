@@ -469,8 +469,8 @@ c q
          u(2,ii)=y(ii+n)
          h(ii)=u(1,ii)
          q(ii)=u(2,ii)
-         Vb(ii)=Vconst+Ar*(atan((ii-0.2-Ur*1d0)/d)-
-     + atan((ii-0.3-Ur*ii)/d))/pi;
+         Vb(ii)=Vconst+Ar*(atan((ii+2d0-Ur*1d0)/dconst)-
+     + atan((ii-2d0-Ur*1d0)/dconst))/pi;
          dd1(ii)=(eps2*Vb(ii)+q(ii)*(h(ii)+1d0))
      +/(eps2*(h(ii)-bbeta)-eps1*(h(ii)+1d0))
          dd2(ii)=(eps1*Vb(ii)+q(ii)*(h(ii)-bbeta))
