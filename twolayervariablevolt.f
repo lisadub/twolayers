@@ -451,14 +451,16 @@ c the subroutine with the pde
       double precision Pbarx,a1,a2,qbar,cc1,cc2,AA,BB
       common/parusteady/Pbarx,a1,a2,qbar,cc1,cc2,AA,BB
 
-      double precision Ar,Vconst,Ur,dconst,pi
+      double precision Ar,Vconst,Ur,dconst,pi,XL,XR
 
 
       pi=4d0*datan(1d0)
 	Vconst=1d0
 	 Ar=1d0
-	 Ur=0.0785
+	 Ur=pi*6d-2
 	 dconst=1e-3
+      XL=-pi+0.1
+      XR=-pi+0.2
       n=ipar(1)
       np=n+1
 
@@ -469,8 +471,9 @@ c q
          u(2,ii)=y(ii+n)
          h(ii)=u(1,ii)
          q(ii)=u(2,ii)
-         Vb(ii)=Vconst+Ar*(atan((ii+2d0-Ur*1d0)/dconst)-
-     + atan((ii-2d0-Ur*1d0)/dconst))/pi;
+         Vb(ii)=Vconst+Ar*(atan((yf(ii)-XL-Ur*T)/dconst)-
+     + atan((yf(ii)-XR-Ur*T)/dconst))/pi; 
+c add write(34,*) t
          dd1(ii)=(eps2*Vb(ii)+q(ii)*(h(ii)+1d0))
      +/(eps2*(h(ii)-bbeta)-eps1*(h(ii)+1d0))
          dd2(ii)=(eps1*Vb(ii)+q(ii)*(h(ii)-bbeta))
