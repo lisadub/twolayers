@@ -96,7 +96,7 @@ c    Parameters for steady part
       AA=(m1-m2*bbeta**2)/(m2*(m1+bbeta*m2))
       BB=(2*bbeta*bbeta**2)/m1+2/m2
       BB=BB+(3*m2*AA*bbeta**2)/(2*m1)-3*AA/2
-      Pbarx=-6/BB
+      Pbarx=-6*fluQ/BB
       a2=AA*Pbarx/2
       a1=m2*a2/m1
       cc1=0d0 !-s2/(bbeta*s2+s1)
