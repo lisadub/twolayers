@@ -59,8 +59,8 @@ c fft stuff
      + integrand2(mxneq),totsum2,integ2,speedc2,
      + totsum3,integ3,totsum4,integ4,integrand4(mxneq),
      + integrand5(mxneq),integ5,totsum5
-      double precision Ar,Vconst,Ur,dconst,pi,XLL,XRR
-      common/vbpar/Ar,Vconst,Ur,dconst,XLL,XRR
+      double precision Ar,Vconst,Ur,dconst,pi,XLL,XRR,fluQ
+      common/vbpar/Ar,Vconst,Ur,dconst,XLL,XRR,fluQ
 
 
       np=n+1
@@ -88,6 +88,8 @@ c fft stuff
       s1=1d0
       s2=10d0
       del=1d-1
+
+      fluQ=1d0
 
 c    Parameters for steady part
 
@@ -306,7 +308,7 @@ c calculates the derivatives
         DD6(kk)=DD6(kk)/(12d0*m1*m2)
 
 
-        p0x(kk)=1-DD1(kk)*(Pbarx*DD2(kk)/(6*m1)+a1/2)
+        p0x(kk)=fluQ-DD1(kk)*(Pbarx*DD2(kk)/(6*m1)+a1/2)
         p0x(kk)=p0x(kk)-DD3(kk)*(Pbarx*DD4(kk)/(6*m2)+a2/2)
         p0x(kk)=p0x(kk)/DD6(kk) 
         
@@ -466,8 +468,8 @@ c the subroutine with the pde
       double precision Pbarx,a1,a2,qbar,cc1,cc2,AA,BB
       common/parusteady/Pbarx,a1,a2,qbar,cc1,cc2,AA,BB
 
-      double precision Ar,Vconst,Ur,dconst,pi,XLL,XRR
-      common/vbpar/Ar,Vconst,Ur,dconst,XLL,XRR
+      double precision Ar,Vconst,Ur,dconst,pi,XLL,XRR,fluQ
+      common/vbpar/Ar,Vconst,Ur,dconst,XLL,XRR,fluQ
 
 
       pi=4d0*datan(1d0)
@@ -518,7 +520,7 @@ c calculates the derivatives
 
 c  horiz velocity at O(1):
 
-        p0x(ii)=1-D1(ii)*(Pbarx*D2(ii)/(6*m1)+a1/2)
+        p0x(ii)=fluQ-D1(ii)*(Pbarx*D2(ii)/(6*m1)+a1/2)
         p0x(ii)=p0x(ii)-D3(ii)*(Pbarx*D4(ii)/(6*m2)+a2/2)
         p0x(ii)=p0x(ii)/D6(ii) 
         
