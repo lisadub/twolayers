@@ -85,8 +85,8 @@ c fft stuff
       eps2=2d0
       m1=1d0
       m2=1d0
-      s1=100d0
-      s2=1000d0
+      s1=1d0
+      s2=10d0
       del=1d-1
 
 c    Parameters for steady part
