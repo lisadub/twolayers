@@ -54,12 +54,13 @@ c fft stuff
      +,dflux(2,mxneq),ff1(mxneq),ff2(mxneq),ddd1x(mxneq),ddd2x(mxneq)
      +,eee1(mxneq),eee2(mxneq),p0x(mxneq)
       double precision DD1(mxneq),DD2(mxneq),DD3(mxneq),DD4(mxneq),
-     + DD5(mxneq)
+     + DD5(mxneq),Vb(mxneq)
      +,DD6(mxneq),integrand(mxneq),totsum,integ,speedc,
      + integrand2(mxneq),totsum2,integ2,speedc2,
      + totsum3,integ3,totsum4,integ4,integrand4(mxneq),
      + integrand5(mxneq),integ5,totsum5
-
+      double precision Ar,Vconst,Ur,dconst,pi,XLL,XRR
+      common/vbpar/Ar,Vconst,Ur,dconst,XLL,XRR
 
 
       np=n+1
@@ -100,6 +101,17 @@ c    Parameters for steady part
       cc2=0d0 !-s1/(bbeta*s2+s1)
       qbar=eps2*cc2-eps1*cc1
 
+c Parameters for voltage BC 
+
+      pi=4d0*datan(1d0)
+	Vconst=1d0
+	 Ar=1d0
+	 Ur=pi*6d-2
+	 dconst=1e-3
+      XLL=-pi+0.1
+      XRR=-pi+0.2
+
+
       write(26,*) AA,BB,Pbarx,a2,a1,m1,m2,bbeta,
      + s1,s2,eps1,eps2,cc1,cc2,qbar
 
@@ -116,12 +128,15 @@ c    Parameters for steady part
 
 c initial condition
          do 19 k=1,np
+	    Vb(k)=Vconst+Ar*(atan((yf(k)-XLL)/dconst)-
+     + atan((yf(k)-XRR)/dconst))/pi;
             yf(k)=((k-1)*dy)
             yf(k)=length*(yf(k)-pi)/pi
 c h
 	  y(k)=amp*hh1*dcos(ky*yf(k))!+0.02d0*dcos(ky*yf(k)/LL)
 c q
 	  y(n+k)=(eps1*s2-eps2*s1)/(s1+bbeta*s2)+amp*qq1*dcos(ky*yf(k))
+     + +Vb(k)
 c     + +0.02d0*dcos(ky*yf(k)/LL)
          write(15,*) sngl(yf(k)),sngl(y(k)),sngl(y(n+k))
  19      continue
@@ -451,16 +466,17 @@ c the subroutine with the pde
       double precision Pbarx,a1,a2,qbar,cc1,cc2,AA,BB
       common/parusteady/Pbarx,a1,a2,qbar,cc1,cc2,AA,BB
 
-      double precision Ar,Vconst,Ur,dconst,pi,XL,XR
+      double precision Ar,Vconst,Ur,dconst,pi,XLL,XRR
+      common/vbpar/Ar,Vconst,Ur,dconst,XLL,XRR
 
 
       pi=4d0*datan(1d0)
-	Vconst=1d0
-	 Ar=1d0
-	 Ur=pi*6d-2
-	 dconst=1e-3
-      XL=-pi+0.1
-      XR=-pi+0.2
+c	Vconst=1d0
+c	 Ar=1d0
+c	 Ur=pi*6d-2
+c	 dconst=1e-3
+c      XL=-pi+0.1
+c      XR=-pi+0.2
       n=ipar(1)
       np=n+1
 
@@ -471,8 +487,8 @@ c q
          u(2,ii)=y(ii+n)
          h(ii)=u(1,ii)
          q(ii)=u(2,ii)
-         Vb(ii)=Vconst+Ar*(atan((yf(ii)-XL-Ur*T)/dconst)-
-     + atan((yf(ii)-XR-Ur*T)/dconst))/pi; 
+         Vb(ii)=Vconst+Ar*(atan((yf(ii)-XLL-Ur*T)/dconst)-
+     + atan((yf(ii)-XRR-Ur*T)/dconst))/pi; 
 c add write(34,*) t
          dd1(ii)=(eps2*Vb(ii)+q(ii)*(h(ii)+1d0))
      +/(eps2*(h(ii)-bbeta)-eps1*(h(ii)+1d0))
