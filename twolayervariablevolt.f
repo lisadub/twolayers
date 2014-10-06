@@ -128,8 +128,8 @@ c Parameters for voltage BC
 
 c initial condition
          do 19 k=1,np
-	    Vb(k)=Vconst+Ar*(atan((yf(k)-XLL)/dconst)-
-     + atan((yf(k)-XRR)/dconst))/pi;
+	    Vb(k)=0d0!Vconst+Ar*(atan((yf(k)-XLL)/dconst)-
+c     + atan((yf(k)-XRR)/dconst))/pi;
             yf(k)=((k-1)*dy)
             yf(k)=length*(yf(k)-pi)/pi
 c h
