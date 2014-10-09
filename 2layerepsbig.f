@@ -5,8 +5,10 @@ c in the form y_t=f(y,t,x,yx,yxx,yxxx,yxxxx)
 c using Fourier in Space (Fornberg, Canuto et al)
 c and DDASSL (Stiff ODE) Solver in time.
 c by Richard Craster
+
+c 2layer problem with epsilon_i ord(1/delta) 
+
 c Note this is on a periodic domain -length to length
-c     Hi LISA 
       INTEGER MXNPDE, MXNEQ, MXLIW, MXLRW, MXNRWK,MAXORD
       INTEGER I, IBAND, IDID, IPRINT, IRES, LIW, LRW, M, NCTF,
      + NEQ, NETF, NFCN, NOINV, NRWK, NSTEPS
@@ -32,116 +34,108 @@ c fft stuff
       double precision thetas(mxneq),thetasx(mxneq),thetasxx(mxneq)
       double precision u(len,mxneq),udex(len,mxneq)
      +,dudx(len,mxneq),d2udx2(len,mxneq),enu
-      double precision ky,minH,maxH,xmin,minHzero,tmin,LL
+      double precision ky,minH,maxH,xmin,minHzero,tmin
       double complex ival,c2,two,ki,bigrc,m11,m12,m21,m22
       double complex lambda1,lambda2,dtheta,term2
-      double precision amp,hh1,qq1,integbyparts 
+      
       double precision Pbarx,a1,a2,qbar,cc1,cc2,AA,BB
-      double precision bbeta,eps1,eps2,S1,S2,m1,m2,del
+      double precision bbeta,eps1,eps2,S1,S2,m1,m2,del,fluQ
       common/space/yf,thetas,thetasx,thetasxx
-      common/parms/bbeta,eps1,eps2,S1,S2,m1,m2,del
+      common/parms/bbeta,eps1,eps2,S1,S2,m1,m2,del,fluQ
       common/parusteady/Pbarx,a1,a2,qbar,cc1,cc2,AA,BB
       common/pival/pi
-      double precision uu(len,mxneq),duudx(len,mxneq)
-     . ,d4uudx4(len,mxneq) 
-      double precision d2uudx2(len,mxneq),d3uudx3(len,mxneq)
-     +,dpdx(len,mxneq),h1(len,mxneq)
-      double precision flux(len,mxneq),dfluxdx(len,mxneq)
-      double precision ddd1(mxneq),ddd2(mxneq),h(mxneq),q(mxneq)
-     +,c(len,mxneq),dcdx(len,mxneq),EE1(mxneq),EE2(mxneq),EE3(mxneq)
-     +,EE4(mxneq),EE5(mxneq),EE6(mxneq),EE7(mxneq),EE8(mxneq),
-     +p1x(mxneq),p2x(mxneq),u1q(len,mxneq),u1qx(len,mxneq),u1(mxneq)
-     +,dflux(2,mxneq),ff1(mxneq),ff2(mxneq),ddd1x(mxneq),ddd2x(mxneq)
-     +,eee1(mxneq),eee2(mxneq),p0x(mxneq)
-      double precision DD1(mxneq),DD2(mxneq),DD3(mxneq),DD4(mxneq),
-     + DD5(mxneq),Vb(mxneq)
-     +,DD6(mxneq),integrand(mxneq),totsum,integ,speedc,
-     + integrand2(mxneq),totsum2,integ2,speedc2,
-     + totsum3,integ3,totsum4,integ4,integrand4(mxneq),
-     + integrand5(mxneq),integ5,totsum5
-      double precision Ar,Vconst,Ur,dconst,pi,XLL,XRR,fluQ
-      common/vbpar/Ar,Vconst,Ur,dconst,XLL,XRR,fluQ
 
+      double precision frontcam,refined,prerefined,
+     + refineddiff,icount
 
       np=n+1
       ival=dcmplx(0d0,1d0)
       pi=4d0*datan(1d0)
 
-      open(21,file='conserved.dat',status='unknown')
       open(24,file='approx1.dat',status='unknown')
-      open(22,file='speed.dat',status='unknown')
       open(25,file='time.dat',status='unknown')
       open(26,file='Usteadypar.dat',status='unknown')
       open(27,file='uord1.dat',status='unknown')
-      open(23,file='integr.dat',status='unknown')
       open(28,file='minmax.dat',status='unknown')
+      open(29,file='speedinterpol.dat',status='unknown')
+c      write(*,*) 'beta,e1,e2,S1,S2,lambda?'
+c      read*,beta,e1,e2,S1,S2,lambda
 
-      amp=-0.01d0
-      hh1=0.5061d0
-      qq1=0.8625d0
-
+c      amp=0.01d0
+c	ky=0.1,1,2,3,4,5,5.5,6
+        amp2=0.01d0
+	amp=amp2*0.088622d0
       bbeta=0.55d0
       eps1=1d0
-      eps2=2d0
+      eps2=15d0
       m1=1d0
       m2=1d0
       s1=100d0
       s2=1000d0
       del=1d-1
 
-      fluQ=0d0
+c define flux:
+
+	fluQ=10d0
 
 c    Parameters for steady part
 
       AA=(m1-m2*bbeta**2)/(m2*(m1+bbeta*m2))
       BB=(2*bbeta*bbeta**2)/m1+2/m2
       BB=BB+(3*m2*AA*bbeta**2)/(2*m1)-3*AA/2
-      Pbarx=-6*fluQ/BB
+      Pbarx=-6*fluQ/BB ! SET THIS TO ZERO TO GET CM05 CASE WITH NO FLOW
       a2=AA*Pbarx/2
       a1=m2*a2/m1
       cc1=0d0 !-s2/(bbeta*s2+s1)
       cc2=0d0 !-s1/(bbeta*s2+s1)
       qbar=eps2*cc2-eps1*cc1
 
-c Parameters for voltage BC 
-
-      pi=4d0*datan(1d0)
-	Vconst=1d0
-	 Ar=1d0
-	 Ur=pi*6d-2
-	 dconst=1e-3
-      XLL=-pi+0.1
-      XRR=-pi+0.2
-
-
       write(26,*) AA,BB,Pbarx,a2,a1,m1,m2,bbeta,
      + s1,s2,eps1,eps2,cc1,cc2,qbar
 
       write(*,*) 'tfinal?'
       read*,tfinal
-
-
-      ky=1d0
-      LL=1d0
-	length=LL*pi/ky
+      ky=1d0 !set ky=0.01 for CM05 case
+	length=1d0*pi/ky ! length=pi for CM05 case and change p2x lower down!!
          dy=2.*pi/n
          icount=0
       t0=0d0
 
 c initial condition
          do 19 k=1,np
-	    Vb(k)=0d0!Vconst+Ar*(atan((yf(k)-XLL)/dconst)-
-c     + atan((yf(k)-XRR)/dconst))/pi;
             yf(k)=((k-1)*dy)
             yf(k)=length*(yf(k)-pi)/pi
 c h
-	  y(k)=amp*hh1*dcos(ky*yf(k))!+0.02d0*dcos(ky*yf(k)/LL)
+	  y(k)=-0.01d0*dcos(ky*yf(k))
 c q
-	  y(n+k)=0d0!(eps1*s2-eps2*s1)/(s1+bbeta*s2)+amp*qq1*dcos(ky*yf(k))
-c     + +Vb(k)
-c     + +0.02d0*dcos(ky*yf(k)/LL)
+	  y(n+k)=(eps1*s2-eps2*s1)/(s1+bbeta*s2)-0.01d0*dcos(ky*yf(k))
          write(15,*) sngl(yf(k)),sngl(y(k)),sngl(y(n+k))
  19      continue
+
+
+c initialize refined for interpolation to find speed later
+	nhalf=n/2
+	icount=1d0
+
+	if(y(1).lt.0d0)then
+     	 do k=1,nhalf
+           if(y(k).lt.0d0) then
+             frontcam=yf(k)
+             refined=(0d0*(yf(k+1)-yf(k))-(yf(k+1)*y(k)-
+     + 	     yf(k)*y(k+1)))/(y(k+1)-y(k))
+           endif
+      	 enddo
+	else
+     	 do k=1,nhalf
+           if(y(k).gt.0d0) then
+             frontcam=yf(k)
+             refined=(0d0*(yf(k+1)-yf(k))-(yf(k+1)*y(k)-
+     + 	     yf(k)*y(k+1)))/(y(k+1)-y(k))
+           endif
+      	 enddo
+	endif
+
+	write(30,*) refined
 
 c fft derivative initialization
       call prefft(n,nfay,ifay,trigy)
@@ -188,7 +182,7 @@ C
 C                      and define HMAX by setting
 C                      RWORK(2)=HMAX ****
 C
-      rwork(2)=0.01d0
+      rwork(2)=0.1d0
 C ccc Check length arrays
       IF (NEQ .GT. MXNEQ) THEN
          PRINT *, 'MXNEQ too small, needed:', NEQ
@@ -216,17 +210,19 @@ C ccc DASSL loop
    15    CALL DDASSL (RESID, NEQ, T, Y, YPRIME, TOUT, INFO, RTOL, ATOL,
      +                IDID, RWORK, LRW, IWORK, LIW, RPAR, IPAR, JAC)
          write(*,*) t,idid
-
+c check if there is any error
+c         maxzeta=0d0
          if(idid.lt.0) goto 900
-
-
-
-c find min and max for h(x,t)
 
 
          minH=200d0
          maxH=-200d0
 
+
+
+
+
+c output data
          if(iprint.ge.0) then
          do 105 kk=1,n
 
@@ -243,184 +239,38 @@ c find min and max for h(x,t)
 
 
 
-c output data
+
 
             write(24,*) sngl(yf(kk)),sngl(y(kk)),sngl(y(n+kk)),sngl(t)
  105         continue
 
 
+c calculate speed using interpolation
 
-
-c        diff=0.5d0*(dabs(y(n/2+1)-y(1)))/amp
-c        write(27,*)sngl(t),dlog(diff)/t
-c        write(*,*)sngl(t),(dlog(diff))/t
+	if(y(1).lt.0d0)then
+     	 do k=1,nhalf
+           if(y(k).lt.0d0) then
+             frontcam=yf(k)
+             prerefined=(0d0*(yf(k+1)-yf(k))-(yf(k+1)*y(k)-
+     + 	     yf(k)*y(k+1)))/(y(k+1)-y(k))
+           endif
+      	 enddo
+	else
+     	 do k=1,nhalf
+           if(y(k).gt.0d0) then
+             frontcam=yf(k)
+             prerefined=(0d0*(yf(k+1)-yf(k))-(yf(k+1)*y(k)-
+     + 	     yf(k)*y(k+1)))/(y(k+1)-y(k))
+           endif
+      	 enddo
+	endif
 
 
         write(28,*) tout,minH,xmin
+        write(29,*) frontcam,prerefined
 
 
              endif
-
-
-
-
-
-c FIND SPEED
-
-
-         if(iprint.ge.0) then
-      do 34 kk=1,n
-
-c h
-         uu(1,kk)=y(kk)
-c q
-         uu(2,kk)=y(kk+n)
-         h(kk)=uu(1,kk)
-         q(kk)=uu(2,kk)
-
-         ddd1(kk)=(eps2+q(kk)*(h(kk)+1d0))
-     +/(eps2*(h(kk)-bbeta)-eps1*(h(kk)+1d0))
-         ddd2(kk)=(eps1+q(kk)*(h(kk)-bbeta))
-     + /(eps2*(h(kk)-bbeta)-eps1*(h(kk)+1d0))
-         c(1,kk)=ddd1(kk)
-         c(2,kk)=ddd2(kk)
- 34    continue
-
-c calculates the derivatives
-         call dy2df(uu,1,duudx,n)
-         call dy2df(duudx,1,d2uudx2,n)
-         call dy2df(c,1,dcdx,n)
-         call dy2df(duudx,2,d3uudx3,n)
-
-
-       do 35 kk=1,n
-          ddd1x(kk)=dcdx(1,kk)
-          ddd2x(kk)=dcdx(2,kk)
-
-        DD1(kk)=-(h(kk)-bbeta)**2d0
-        DD2(kk)=h(kk)+2*bbeta
-        DD3(kk)=(h(kk)+1d0)**2d0
-        DD4(kk)=h(kk)-2d0
-        DD5(kk)=m1*(1-h(kk)**2d0)+m2*(h(kk)**2d0-bbeta**2d0)
-        DD5(kk)=DD5(kk)/(m1*(h(kk)+1)+m2*(bbeta-h(kk)))
-        DD6(kk)=m2*DD1(kk)*(2d0*DD2(kk)+3d0*DD5(kk))
-        DD6(kk)=DD6(kk)+m1*DD3(kk)*(2d0*DD4(kk)+3d0*DD5(kk))
-        DD6(kk)=DD6(kk)/(12d0*m1*m2)
-
-
-        p0x(kk)=fluQ-DD1(kk)*(Pbarx*DD2(kk)/(6*m1)+a1/2)
-        p0x(kk)=p0x(kk)-DD3(kk)*(Pbarx*DD4(kk)/(6*m2)+a2/2)
-        p0x(kk)=p0x(kk)/DD6(kk) 
-        
-        eee1(kk)=p0x(kk)*DD5(kk)/(2*m1)
-        eee2(kk)=p0x(kk)*DD5(kk)/(2*m2)
-
-	
-        EE1(kk)=h(kk)-bbeta-m1*(h(kk)+1)/m2
-	EE2(kk)=-(h(kk)*h(kk)-bbeta**2d0)/(2*m1)+
-     + h(kk)*(h(kk)+1)/m2
-	EE3(kk)=(-0.5d0*(h(kk)+1d0)**2d0)/m2
-	EE4(kk)=-(h(kk)+1d0)*(duudx(1,kk)*(ddd1(kk)+cc1)
-     + +(h(kk)-bbeta)*ddd1x(kk))/m2
-	EE5(kk)=-(ddd1x(kk)*(h(kk)-bbeta)+(cc1+ddd1(kk))*duudx(1,kk))
-
-	EE6(kk)=-DD2(kk)*DD1(kk)/(6d0*m1)
-	EE6(kk)=EE6(kk)-(DD1(kk)*EE2(kk)/(2d0*EE1(kk)))
-	EE6(kk)=EE6(kk)-(0.5d0*(DD3(kk))
-     + *(h(kk)+(EE2(kk)*m1/EE1(kk))))
-	EE7(kk)=-EE3(kk)*DD1(kk)/(2d0*EE1(kk))
-	EE7(kk)=EE7(kk)+(EE3(kk)*DD4(kk)/3d0)
-	EE7(kk)=EE7(kk)-0.5d0*(DD3(kk)*
-     +((EE3(kk)*m1/EE1(kk))-h(kk)))
-	EE8(kk)=-EE4(kk)*DD1(kk)/(2d0*EE1(kk))
-	EE8(kk)=EE8(kk)-(0.5d0*DD3(kk)*
-     + ((EE4(kk)*m1/EE1(kk))+EE5(kk)))
-
-	p2x(kk)=-(eps1*ddd1(kk)*ddd1x(kk)
-     +-eps2*ddd2(kk)*ddd2x(kk))*EE6(kk)
-	p2x(kk)=p2x(kk)-EE6(kk)*d3uudx3(1,kk)-EE8(kk)*(q(kk)+qbar)
-	p2x(kk)=p2x(kk)/(EE6(kk)+EE7(kk))
-	p1x(kk)=p2x(kk)+d3uudx3(1,kk)
-     + +eps1*(cc1+ddd1(kk))*ddd1x(kk)-eps2*(ddd2(kk)+cc2)*ddd2x(kk)
-
-	ff1(kk)=(EE2(kk)*p1x(kk)+EE3(kk)*p2x(kk)+EE4(kk)*(q(kk)+qbar))
-     +/EE1(kk)
-	ff2(kk)=p1x(kk)*(h(kk)+(EE2(kk)*m1/EE1(kk)))
-	ff2(kk)=ff2(kk)+(p2x(kk)*((EE3(kk)*m1/EE1(kk))-h(kk)))
-	ff2(kk)=ff2(kk)+((q(kk)+qbar)*((EE4(kk)*m1/EE1(kk))+EE5(kk)))
-
-
-
-          u1(kk)=(h(kk)-bbeta)*
-     +    ((Pbarx+p0x(kk)+0d0*p1x(kk))*(h(kk)+bbeta)/(2d0*m1)
-     +    +a1+eee1(kk)+0d0*ff1(kk))
-          u1q(1,kk)=u1(kk)*(q(kk)+qbar)
-          u1q(2,kk)=0d0
-          flux(1,kk)=DD3(kk)/6d0
-          flux(1,kk)=flux(1,kk)*
-     + (DD4(kk)*(Pbarx+p0x(kk)+del*p2x(kk))+
-     +  3d0*(a2+eee1(kk)+del*ff2(kk)))
-          flux(2,kk)=0d0
- 35         continue
-         call dy2df(u1q,1,u1qx,n)
-         call dy2df(flux,1,dflux,n)
-
-
-
-c INTEGRATION TO FIND THE SPEED
-
-      do 33 kk=1,n
-c integrand from the q equation:
-       integrand4(kk)=(u1qx(1,kk)-(s1*ddd1(kk)-s2*ddd2(kk)))*
-     + duudx(2,kk)
-
-       integrand5(kk)=duudx(2,kk)**2d0
-
-c integrand from the h equation:
-       integrand(kk)=dflux(1,kk)*duudx(1,kk)
-
-       integrand2(kk)=duudx(1,kk)**2d0
-
-c       integrand(kk)=d2uudx2(1,kk)*flux(1,kk)!dflux(1,kk)*duudx(1,kk)
-
-            write(23,*) sngl(dflux(1,kk)),sngl(integrand(kk)),
-     + sngl(duudx(1,kk)),sngl(integrand2(kk))
- 33         continue
-
-c TRAPEZIUM RULE
-
-       totsum=integrand(1)+integrand(n)
-       totsum2=integrand2(1)+integrand2(n)
-       totsum4=integrand4(1)+integrand4(n)
-       totsum5=integrand5(1)+integrand5(n)
-       totsum3=h(1)+h(n)
-      do 32 kk=2,n-1
-       totsum=totsum+2d0*integrand(kk)
-       totsum2=totsum2+2d0*integrand2(kk)
-       totsum4=totsum4+2d0*integrand4(kk)
-       totsum5=totsum5+2d0*integrand5(kk)
-       totsum3=totsum3+2d0*h(kk)
- 32         continue
-       integ=2d0*length*totsum/(2*n)
-       integ2=2d0*length*totsum2/(2*n)
-       integ3=2d0*length*totsum3/(2*n)
-       integ4=2d0*length*totsum4/(2*n)
-       integ5=2d0*length*totsum5/(2*n)
-
-
-       speedc=integ4/integ5  ! speed found from the q eq
-       speedc2=integ/integ2  !speed found from the h eq
-
-
-C       integbyparts=duudx(1,n)*flux(1,n)-duudx(1,1)*flux(1,1)
-c       speedc2=(integbyparts-integ)/integ2
-
-            write(22,*) real(speedc),real(integ),real(speedc2),
-     + real(integ2)
-            write(21,*) real(integ3)
-
-             endif
-
  10      continue
       STOP 'Ready'
 C
@@ -455,30 +305,18 @@ c the subroutine with the pde
      +,E4(mxneq),E5(mxneq),E6(mxneq),E7(mxneq),E8(mxneq),
      +p1x(mxneq),p2x(mxneq),u1q(len,mxneq),u1qx(len,mxneq),u1(mxneq)
      +,dflux(2,mxneq),f1(mxneq),f2(mxneq),dd1x(mxneq),dd2x(mxneq)
-     +,ee1(mxneq),ee2(mxneq),p0x(mxneq),
-     +Vb(mxneq)
+     +,ee1(mxneq),ee2(mxneq),p0x(mxneq)
 
       double precision D1(mxneq),D2(mxneq),D3(mxneq),D4(mxneq),D5(mxneq)
      +,D6(mxneq)
-      double precision bbeta,eps1,eps2,S1,S2,m1,m2
+      double precision bbeta,eps1,eps2,S1,S2,m1,m2,del,fluQ
       common /yfac/trigy(2,mxneq),nfay,ifay(20)
       common/wvz/wavey1(mxneq),wavey2(mxneq),modk(mxneq)
       common/space/yf,thetas,thetasx,thetasxx
-      common/parms/bbeta,eps1,eps2,S1,S2,m1,m2,del
+      common/parms/bbeta,eps1,eps2,S1,S2,m1,m2,del,fluQ
       double precision Pbarx,a1,a2,qbar,cc1,cc2,AA,BB
       common/parusteady/Pbarx,a1,a2,qbar,cc1,cc2,AA,BB
 
-      double precision Ar,Vconst,Ur,dconst,pi,XLL,XRR,fluQ
-      common/vbpar/Ar,Vconst,Ur,dconst,XLL,XRR,fluQ
-
-
-      pi=4d0*datan(1d0)
-c	Vconst=1d0
-c	 Ar=1d0
-c	 Ur=pi*6d-2
-c	 dconst=1e-3
-c      XL=-pi+0.1
-c      XR=-pi+0.2
       n=ipar(1)
       np=n+1
 
@@ -489,12 +327,13 @@ c q
          u(2,ii)=y(ii+n)
          h(ii)=u(1,ii)
          q(ii)=u(2,ii)
-         Vb(ii)=Vconst+Ar*(atan((yf(ii)-XLL-Ur*T)/dconst)-
-     + atan((yf(ii)-XRR-Ur*T)/dconst))/pi; 
-c add write(34,*) t
-         dd1(ii)=(eps2*Vb(ii)+q(ii)*(h(ii)+1d0))
+c         dd1(ii)=(q(ii)*(h(ii)+1d0))
+c     +/(eps2*(h(ii)-bbeta)-eps1*(h(ii)+1d0))
+c         dd2(ii)=(q(ii)*(h(ii)-bbeta))
+c     + /(eps2*(h(ii)-bbeta)-eps1*(h(ii)+1d0))
+         dd1(ii)=(eps2+q(ii)*(h(ii)+1d0))
      +/(eps2*(h(ii)-bbeta)-eps1*(h(ii)+1d0))
-         dd2(ii)=(eps1*Vb(ii)+q(ii)*(h(ii)-bbeta))
+         dd2(ii)=(eps1+q(ii)*(h(ii)-bbeta))
      + /(eps2*(h(ii)-bbeta)-eps1*(h(ii)+1d0))
          c(1,ii)=dd1(ii)
          c(2,ii)=dd2(ii)
@@ -502,6 +341,7 @@ c add write(34,*) t
 c calculates the derivatives
          call dy2df(u,1,dudx,n)
          call dy2df(c,1,dcdx,n)
+c         call dy2df(u,2,d2udx2,n)
          call dy2df(dudx,2,d3udx3,n)
 
        do ii=1,n
@@ -520,9 +360,9 @@ c calculates the derivatives
 
 c  horiz velocity at O(1):
 
-        p0x(ii)=fluQ-D1(ii)*(Pbarx*D2(ii)/(6*m1)+a1/2)
+        p0x(ii)=1-D1(ii)*(Pbarx*D2(ii)/(6*m1)+a1/2)
         p0x(ii)=p0x(ii)-D3(ii)*(Pbarx*D4(ii)/(6*m2)+a2/2)
-        p0x(ii)=p0x(ii)/D6(ii) 
+        p0x(ii)=0d0!p0x(ii)/D6(ii) 
         
         ee1(ii)=p0x(ii)*D5(ii)/(2*m1)
         ee2(ii)=p0x(ii)*D5(ii)/(2*m2)
@@ -550,6 +390,8 @@ c  horiz velocity at O(1):
 
 	p2x(ii)=-(eps1*dd1(ii)*dd1x(ii)-eps2*dd2(ii)*dd2x(ii))*E6(ii)
 	p2x(ii)=p2x(ii)-E6(ii)*d3udx3(1,ii)-E8(ii)*(q(ii)+qbar)
+        p2x(ii)=p2x(ii)-fluQ+D1(ii)*(Pbarx*D2(ii)/(6*m1)+a1/2) ! get rid of this and next line if you want CM05 case/ This is also where you change the flux, i,e, that 1.
+        p2x(ii)=p2x(ii)+D3(ii)*(Pbarx*D4(ii)/(6*m2)+a2/2)
 	p2x(ii)=p2x(ii)/(E6(ii)+E7(ii))
 	p1x(ii)=p2x(ii)+d3udx3(1,ii)
      + +eps1*(cc1+dd1(ii))*dd1x(ii)-eps2*(dd2(ii)+cc2)*dd2x(ii)
@@ -558,18 +400,18 @@ c  horiz velocity at O(1):
 	f2(ii)=p1x(ii)*(h(ii)+(E2(ii)*m1/E1(ii)))
 	f2(ii)=f2(ii)+(p2x(ii)*((E3(ii)*m1/E1(ii))-h(ii)))
 	f2(ii)=f2(ii)+((q(ii)+qbar)*((E4(ii)*m1/E1(ii))+E5(ii)))
-
+c        f2(ii)=f2(ii)/m2
 c dodgy stuff with m2's in h equation:
 
           u1(ii)=(h(ii)-bbeta)*
-     +    ((Pbarx+p0x(ii)+0d0*p1x(ii))*(h(ii)+bbeta)/(2d0*m1)
-     +    +a1+ee1(ii)+0d0*f1(ii))
+     +    ((Pbarx+p0x(ii)+p1x(ii))*(h(ii)+bbeta)/(2d0*m1)
+     +    +a1+ee1(ii)+f1(ii))
           u1q(1,ii)=u1(ii)*(q(ii)+qbar)
           u1q(2,ii)=0d0
           flux(1,ii)=D3(ii)/6d0
           flux(1,ii)=flux(1,ii)*
-     + (D4(ii)*(Pbarx+p0x(ii)+del*p2x(ii))+
-     +  3d0*(a2+ee1(ii)+del*f2(ii)))
+     + (D4(ii)*(Pbarx+p0x(ii)+p2x(ii))+
+     +  3d0*(a2+ee1(ii)+f2(ii)))
           flux(2,ii)=0d0
        enddo
 
@@ -580,7 +422,7 @@ c sets up the odes
 c h equation
       delta(k)=yprime(k)+dflux(1,k)
 c the q equation
-      delta(k+n)=yprime(k+n)!+u1qx(1,k)-(s1*dd1(k)-s2*dd2(k))
+      delta(k+n)=yprime(k+n)+u1qx(1,k)-(s1*dd1(k)-s2*dd2(k))
  25   continue
 c the code sets deltak=0
       RETURN
