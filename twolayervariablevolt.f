@@ -61,6 +61,7 @@ c fft stuff
      + integrand5(mxneq),integ5,totsum5
       double precision Ar,Vconst,Ur,dconst,pi,XLL,XRR,fluQ
       common/vbpar/Ar,Vconst,Ur,dconst,XLL,XRR,fluQ
+      double precision hfrombefore(256),uga(256)
 
 
       np=n+1
@@ -75,6 +76,8 @@ c fft stuff
       open(27,file='uord1.dat',status='unknown')
       open(23,file='integr.dat',status='unknown')
       open(28,file='minmax.dat',status='unknown')
+      open(7,file='hini.dat',status='unknown')
+      open(8,file='hfin.dat',status='unknown')
 
       amp=-0.01d0
       hh1=0.5061d0
@@ -130,6 +133,7 @@ c Parameters for voltage BC
 
 c initial condition
          do 19 k=1,np
+            read(7,*) uga(k),hfrombefore(k)
 	    Vb(k)=0d0!Vconst+Ar*(atan((yf(k)-XLL)/dconst)-
 c     + atan((yf(k)-XRR)/dconst))/pi;
             yf(k)=((k-1)*dy)
@@ -141,7 +145,9 @@ c q
 c     + +Vb(k)
 c     + +0.02d0*dcos(ky*yf(k)/LL)
          write(15,*) sngl(yf(k)),sngl(y(k)),sngl(y(n+k))
+         write(8,*) uga(k),hfrombefore(k)
  19      continue
+         close(7)
 
 c fft derivative initialization
       call prefft(n,nfay,ifay,trigy)
