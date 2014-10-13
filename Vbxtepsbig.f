@@ -110,11 +110,11 @@ c Parameters for voltage BC
 
       pi=4d0*datan(1d0)
 	Vconst=1d0
-	 Ar=1d0
-	 Ur=pi*6d-2
-	 dconst=1d-3
-      XLL=-pi+0.1
-      XRR=-pi+0.2
+	 Ar=5d0
+	 Ur=pi*24d-2
+	 dconst=d-1*pi
+      XLL=-4*pi+0.1
+      XRR=XLL+pi
 
 
       write(26,*) AA,BB,Pbarx,a2,a1,m1,m2,bbeta,
@@ -138,7 +138,7 @@ c initial condition
  21      continue
          close(7)
  
-
+	hfrombefore(np)=hfrombefore(1)
 
          do 19 k=1,np
 	    Vb(k)=0d0!Vconst+Ar*(atan((yf(k)-XLL)/dconst)-
@@ -146,7 +146,7 @@ c     + atan((yf(k)-XRR)/dconst))/pi;
             yf(k)=((k-1)*dy)
             yf(k)=length*(yf(k)-pi)/pi
 c h
-	  y(k)=amp*hh1*dcos(ky*yf(k))!+0.02d0*dcos(ky*yf(k)/LL)
+	  y(k)=hfrombefore(k)!amp*hh1*dcos(ky*yf(k))!+0.02d0*dcos(ky*yf(k)/LL)
 c q
 	  y(n+k)=0d0!(eps1*s2-eps2*s1)/(s1+bbeta*s2)+amp*qq1*dcos(ky*yf(k))
 c     + +Vb(k)
@@ -502,7 +502,7 @@ c q
          q(ii)=u(2,ii)
          Vb(ii)=Vconst+Ar*(atan((yf(ii)-XLL-Ur*T)/dconst)-
      + atan((yf(ii)-XRR-Ur*T)/dconst))/pi; 
-c add write(34,*) t
+c        write(34,*) t,Vb(ii)
          dd1(ii)=(eps2*Vb(ii)+q(ii)*(h(ii)+1d0))
      +/(eps2*(h(ii)-bbeta)-eps1*(h(ii)+1d0))
          dd2(ii)=(eps1*Vb(ii)+q(ii)*(h(ii)-bbeta))
