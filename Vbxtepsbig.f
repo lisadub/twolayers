@@ -125,15 +125,22 @@ c Parameters for voltage BC
 
 
       ky=1d0
-      LL=1d0
+      LL=4d0
 	length=LL*pi/ky
          dy=2.*pi/n
          icount=0
       t0=0d0
 
 c initial condition
-         do 19 k=1,np
+	  do 21 k=1,n
             read(7,*) uga(k),hfrombefore(k)
+         write(8,*) uga(k),hfrombefore(k)
+ 21      continue
+         close(7)
+ 
+
+
+         do 19 k=1,np
 	    Vb(k)=0d0!Vconst+Ar*(atan((yf(k)-XLL)/dconst)-
 c     + atan((yf(k)-XRR)/dconst))/pi;
             yf(k)=((k-1)*dy)
@@ -144,10 +151,8 @@ c q
 	  y(n+k)=0d0!(eps1*s2-eps2*s1)/(s1+bbeta*s2)+amp*qq1*dcos(ky*yf(k))
 c     + +Vb(k)
 c     + +0.02d0*dcos(ky*yf(k)/LL)
-         write(15,*) sngl(yf(k)),sngl(y(k)),sngl(y(n+k))
-         write(8,*) uga(k),hfrombefore(k)
  19      continue
-         close(7)
+
 
 c fft derivative initialization
       call prefft(n,nfay,ifay,trigy)
