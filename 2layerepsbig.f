@@ -76,7 +76,7 @@ c	ky=0.1,1,2,3,4,5,5.5,6
 
 c define flux:
 
-	fluQ=10d0
+	fluQ=0d0
 
 c    Parameters for steady part
 
@@ -96,7 +96,7 @@ c    Parameters for steady part
       write(*,*) 'tfinal?'
       read*,tfinal
       ky=1d0 !set ky=0.01 for CM05 case
-	length=1d0*pi/ky ! length=pi for CM05 case and change p2x lower down!!
+	length=4d0*pi/ky ! length=pi for CM05 case and change p2x lower down!!
          dy=2.*pi/n
          icount=0
       t0=0d0
