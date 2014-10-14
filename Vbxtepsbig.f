@@ -72,7 +72,7 @@ c fft stuff
       open(24,file='approx1.dat',status='unknown')
       open(22,file='speed.dat',status='unknown')
       open(25,file='time.dat',status='unknown')
-      open(26,file='Usteadypar.dat',status='unknown')
+      open(26,file='VbxtPar.dat',status='unknown')
       open(27,file='uord1.dat',status='unknown')
       open(23,file='integr.dat',status='unknown')
       open(28,file='minmax.dat',status='unknown')
@@ -108,17 +108,16 @@ c    Parameters for steady part
 
 c Parameters for voltage BC 
 
-      pi=4d0*datan(1d0)
 	Vconst=1d0
 	 Ar=5d0
 	 Ur=pi*24d-2
-	 dconst=d-1*pi
+	 dconst=1d-1*pi
       XLL=-4*pi+0.1
       XRR=XLL+pi
 
 
-      write(26,*) AA,BB,Pbarx,a2,a1,m1,m2,bbeta,
-     + s1,s2,eps1,eps2,cc1,cc2,qbar
+      write(26,*) Vconst,Ar,Ur,dconst,XLL,XRR
+ 
 
       write(*,*) 'tfinal?'
       read*,tfinal
