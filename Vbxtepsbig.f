@@ -6,7 +6,6 @@ c using Fourier in Space (Fornberg, Canuto et al)
 c and DDASSL (Stiff ODE) Solver in time.
 c by Richard Craster
 c Note this is on a periodic domain -length to length
-c     Hi LISA 
       INTEGER MXNPDE, MXNEQ, MXLIW, MXLRW, MXNRWK,MAXORD
       INTEGER I, IBAND, IDID, IPRINT, IRES, LIW, LRW, M, NCTF,
      + NEQ, NETF, NFCN, NOINV, NRWK, NSTEPS
@@ -61,7 +60,7 @@ c fft stuff
      + integrand5(mxneq),integ5,totsum5
       double precision Ar,Vconst,Ur,dconst,pi,XLL,XRR,fluQ
       common/vbpar/Ar,Vconst,Ur,dconst,XLL,XRR,fluQ
-      double precision hfrombefore(256),uga(256)
+      double precision hfrombefore(256),uga(256),ugaa
 
 
       np=n+1
@@ -110,11 +109,12 @@ c Parameters for voltage BC
 
 	Vconst=1d0
 	 Ar=5d0
-	 Ur=pi*24d-2
+	 Ur=pi*48d-2
 	 dconst=1d-1*pi
       XLL=-4*pi+0.1
       XRR=XLL+pi
-
+c      ugaa=7d0/8d0
+c	ugaa=floor(ugaa)
 
       write(26,*) Vconst,Ar,Ur,dconst,XLL,XRR
  
@@ -466,7 +466,8 @@ c the subroutine with the pde
      +p1x(mxneq),p2x(mxneq),u1q(len,mxneq),u1qx(len,mxneq),u1(mxneq)
      +,dflux(2,mxneq),f1(mxneq),f2(mxneq),dd1x(mxneq),dd2x(mxneq)
      +,ee1(mxneq),ee2(mxneq),p0x(mxneq),
-     +Vb(mxneq)
+     +Vb(mxneq),xsi1(mxneq),xsi2(mxneq),infloor1(mxneq),infloor2(mxneq)
+
 
       double precision D1(mxneq),D2(mxneq),D3(mxneq),D4(mxneq),D5(mxneq)
      +,D6(mxneq)
@@ -499,9 +500,18 @@ c q
          u(2,ii)=y(ii+n)
          h(ii)=u(1,ii)
          q(ii)=u(2,ii)
+
+	 infloor1(ii)=(yf(ii)-XLL-Ur*T+4d0*pi)/(8d0*pi)
+	 infloor2(ii)=(yf(ii)-XRR-Ur*T+4d0*pi)/(8d0*pi)
+         xsi1(ii)=(yf(ii)-XLL-Ur*T)-8d0*pi*floor(infloor1(ii))
+         xsi2(ii)=(yf(ii)-XRR-Ur*T)-8d0*pi*floor(infloor2(ii))
+
+c         Vb(ii)=Vconst+Ar*(atan(xsi1(ii)/dconst)-
+c     + atan(xsi2(ii)/dconst))/pi; 
+
          Vb(ii)=Vconst+Ar*(atan((yf(ii)-XLL-Ur*T)/dconst)-
      + atan((yf(ii)-XRR-Ur*T)/dconst))/pi; 
-c        write(34,*) t,Vb(ii)
+
          dd1(ii)=(eps2*Vb(ii)+q(ii)*(h(ii)+1d0))
      +/(eps2*(h(ii)-bbeta)-eps1*(h(ii)+1d0))
          dd2(ii)=(eps1*Vb(ii)+q(ii)*(h(ii)-bbeta))
@@ -574,14 +584,14 @@ c  horiz velocity at O(1):
 c dodgy stuff with m2's in h equation:
 
           u1(ii)=(h(ii)-bbeta)*
-     +    ((Pbarx+p0x(ii)+0d0*p1x(ii))*(h(ii)+bbeta)/(2d0*m1)
-     +    +a1+ee1(ii)+0d0*f1(ii))
+     +    ((Pbarx+p0x(ii)+p1x(ii))*(h(ii)+bbeta)/(2d0*m1)
+     +    +a1+ee1(ii)+f1(ii))
           u1q(1,ii)=u1(ii)*(q(ii)+qbar)
           u1q(2,ii)=0d0
           flux(1,ii)=D3(ii)/6d0
           flux(1,ii)=flux(1,ii)*
-     + (D4(ii)*(Pbarx+p0x(ii)+del*p2x(ii))+
-     +  3d0*(a2+ee1(ii)+del*f2(ii)))
+     + (D4(ii)*(Pbarx+p0x(ii)+p2x(ii))+
+     +  3d0*(a2+ee1(ii)+f2(ii)))
           flux(2,ii)=0d0
        enddo
 
